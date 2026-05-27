@@ -1,0 +1,172 @@
+{
+  "info": {
+    "name": "Gestão Financeira API",
+    "_postman_id": "12345678-abcd-1234-abcd-123456789000",
+    "description": "Collection da API de Gestão Financeira",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": [""]
+        }
+      }
+    },
+    {
+      "name": "Listar Categorias",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/categories",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["categories"]
+        }
+      }
+    },
+    {
+      "name": "Criar Categoria",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"health\",\n  \"displayName\": \"Saúde\",\n  \"icon\": \"favorite\",\n  \"background\": \"#FFB6B6\",\n  \"isIncome\": false\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/categories",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["categories"]
+        }
+      }
+    },
+    {
+      "name": "Atualizar Categoria",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"displayName\": \"Saúde e Bem-estar\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/categories/ID_DA_CATEGORIA",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["categories", "ID_DA_CATEGORIA"]
+        }
+      }
+    },
+    {
+      "name": "Excluir Categoria",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/categories/ID_DA_CATEGORIA",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["categories", "ID_DA_CATEGORIA"]
+        }
+      }
+    },
+    {
+      "name": "Criar Transação",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Salário de outubro\",\n  \"value\": 3500.50,\n  \"date\": \"2026-04-29\",\n  \"categoryId\": \"ID_DA_CATEGORIA\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/transactions",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["transactions"]
+        }
+      }
+    },
+    {
+      "name": "Listar Transações",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/transactions",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["transactions"]
+        }
+      }
+    },
+    {
+      "name": "Excluir Transação",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/transactions/ID_DA_TRANSACAO",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["transactions", "ID_DA_TRANSACAO"]
+        }
+      }
+    },
+    {
+      "name": "Validar Erros",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/transactions",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["transactions"]
+        }
+      }
+    }
+  ]
+}
