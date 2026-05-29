@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
-import { getUserId, requireUserId } from "../lib/requestUser.js";
+import { getUserId } from "../lib/requestUser.js";
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -18,14 +18,14 @@ function normalizeName(value) {
     .replace(/^_+|_+$/g, "");
 }
 
-async function hasDuplicateCategory({ userId, displayName, excludeId }) {
-  const name = normalizeName(displayName);
-
+async function hasDuplicateCategory({ userId, name, excludeId }) {
   const duplicate = await prisma.category.findFirst({
     where: {
       id: excludeId ? { not: excludeId } : undefined,
       name,
-      OR: [{ isDefault: true }, { userId }],
+      OR: userId
+        ? [{ isDefault: true }, { userId }]
+        : [{ isDefault: true }, { userId: null }],
     },
   });
 
@@ -38,7 +38,7 @@ router.get("/", async (req, res, next) => {
     const categories = await prisma.category.findMany({
       where: userId
         ? { OR: [{ isDefault: true }, { userId }] }
-        : { isDefault: true },
+        : { OR: [{ isDefault: true }, { userId: null }] },
       orderBy: [{ isDefault: "desc" }, { displayName: "asc" }],
     });
 
@@ -50,14 +50,12 @@ router.get("/", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const userId = requireUserId(req, res);
-    if (!userId) return;
-
+    const userId = getUserId(req);
     const data = createCategorySchema.parse(req.body);
-    const name = normalizeName(data.displayName);
+    const name = data.name ? normalizeName(data.name) : normalizeName(data.displayName);
 
-    if (await hasDuplicateCategory({ userId, displayName: data.displayName })) {
-      return res.status(409).json({ error: "Categoria ja cadastrada" });
+    if (await hasDuplicateCategory({ userId, name })) {
+      return res.status(409).json({ error: "Categoria já cadastrada" });
     }
 
     const category = await prisma.category.create({
@@ -77,18 +75,16 @@ router.post("/", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    const userId = requireUserId(req, res);
-    if (!userId) return;
-
+    const userId = getUserId(req);
     const existing = await prisma.category.findUnique({ where: { id: req.params.id } });
     if (!existing) {
-      return res.status(404).json({ error: "Categoria nao encontrada" });
+      return res.status(404).json({ error: "Categoria não encontrada" });
     }
     if (existing.isDefault) {
-      return res.status(400).json({ error: "Categorias padrao nao podem ser alteradas" });
+      return res.status(400).json({ error: "Categorias padrão não podem ser alteradas" });
     }
     if (existing.userId !== userId) {
-      return res.status(404).json({ error: "Categoria nao encontrada" });
+      return res.status(404).json({ error: "Categoria não encontrada" });
     }
 
     const data = updateCategorySchema.parse(req.body);
@@ -98,11 +94,11 @@ router.put("/:id", async (req, res, next) => {
       data.displayName &&
       (await hasDuplicateCategory({
         userId,
-        displayName: data.displayName,
+        name: nextName,
         excludeId: req.params.id,
       }))
     ) {
-      return res.status(409).json({ error: "Categoria ja cadastrada" });
+      return res.status(409).json({ error: "Categoria já cadastrada" });
     }
 
     const category = await prisma.category.update({
@@ -118,20 +114,18 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const userId = requireUserId(req, res);
-    if (!userId) return;
-
+    const userId = getUserId(req);
     const existing = await prisma.category.findUnique({
       where: { id: req.params.id },
     });
     if (!existing) {
-      return res.status(404).json({ error: "Categoria nao encontrada" });
+      return res.status(404).json({ error: "Categoria não encontrada" });
     }
     if (existing.isDefault) {
-      return res.status(400).json({ error: "Categorias padrao nao podem ser excluidas" });
+      return res.status(400).json({ error: "Categorias padrão não podem ser excluídas" });
     }
     if (existing.userId !== userId) {
-      return res.status(404).json({ error: "Categoria nao encontrada" });
+      return res.status(404).json({ error: "Categoria não encontrada" });
     }
 
     await prisma.category.delete({ where: { id: req.params.id } });

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import ExcelJS from "exceljs";
 import { prisma } from "../lib/prisma.js";
-import { requireUserId } from "../lib/requestUser.js";
+import { getUserId, requireUserId } from "../lib/requestUser.js";
 import {
   createTransactionSchema,
   updateTransactionSchema,
@@ -13,7 +13,9 @@ async function canUseCategory(userId, categoryId) {
   const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
-      OR: [{ isDefault: true }, { userId }],
+      OR: userId
+        ? [{ isDefault: true }, { userId }]
+        : [{ isDefault: true }, { userId: null }],
     },
   });
 
@@ -22,8 +24,7 @@ async function canUseCategory(userId, categoryId) {
 
 router.get("/", async (req, res, next) => {
   try {
-    const userId = requireUserId(req, res);
-    if (!userId) return;
+    const userId = getUserId(req);
 
     const transactions = await prisma.transaction.findMany({
       where: { userId },
@@ -121,9 +122,7 @@ router.get("/export", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const userId = requireUserId(req, res);
-    if (!userId) return;
-
+    const userId = getUserId(req);
     const data = createTransactionSchema.parse(req.body);
     if (!(await canUseCategory(userId, data.categoryId))) {
       return res.status(400).json({ error: "Categoria invalida para este usuario" });
@@ -141,9 +140,7 @@ router.post("/", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    const userId = requireUserId(req, res);
-    if (!userId) return;
-
+    const userId = getUserId(req);
     const data = updateTransactionSchema.parse(req.body);
     const existing = await prisma.transaction.findFirst({
       where: { id: req.params.id, userId },
@@ -167,8 +164,7 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const userId = requireUserId(req, res);
-    if (!userId) return;
+    const userId = getUserId(req);
 
     const existing = await prisma.transaction.findFirst({
       where: { id: req.params.id, userId },

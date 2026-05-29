@@ -2,40 +2,35 @@
   "info": {
     "name": "Gestão Financeira API",
     "_postman_id": "12345678-abcd-1234-abcd-123456789000",
-    "description": "Collection da API de Gestão Financeira",
+    "description": "Collection para validar a API de Gestão Financeira conforme o roteiro do professor.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
   "item": [
     {
-      "name": "Health Check",
+      "name": "Health-check",
       "request": {
         "method": "GET",
         "header": [],
-        "url": {
-          "raw": "http://localhost:3000/",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": [""]
-        }
+        "url": "{{baseUrl}}/"
       }
     },
     {
-      "name": "Listar Categorias",
+      "name": "Listar categorias",
       "request": {
         "method": "GET",
         "header": [],
-        "url": {
-          "raw": "http://localhost:3000/categories",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["categories"]
-        }
+        "url": "{{baseUrl}}/categories"
       }
     },
     {
-      "name": "Criar Categoria",
+      "name": "Criar categoria",
       "request": {
         "method": "POST",
         "header": [
@@ -46,19 +41,18 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"health\",\n  \"displayName\": \"Saúde\",\n  \"icon\": \"favorite\",\n  \"background\": \"#FFB6B6\",\n  \"isIncome\": false\n}"
+          "raw": "{\n  \"name\": \"health\",\n  \"displayName\": \"Saúde\",\n  \"icon\": \"favorite\",\n  \"background\": \"#FFB6B6\",\n  \"isIncome\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         },
-        "url": {
-          "raw": "http://localhost:3000/categories",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["categories"]
-        }
+        "url": "{{baseUrl}}/categories"
       }
     },
     {
-      "name": "Atualizar Categoria",
+      "name": "Atualizar categoria",
       "request": {
         "method": "PUT",
         "header": [
@@ -69,33 +63,26 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"displayName\": \"Saúde e Bem-estar\"\n}"
+          "raw": "{\n  \"displayName\": \"Saúde e Bem-estar\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         },
-        "url": {
-          "raw": "http://localhost:3000/categories/ID_DA_CATEGORIA",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["categories", "ID_DA_CATEGORIA"]
-        }
+        "url": "{{baseUrl}}/categories/COLE_AQUI_O_ID_DA_CATEGORIA"
       }
     },
     {
-      "name": "Excluir Categoria",
+      "name": "Excluir categoria",
       "request": {
         "method": "DELETE",
         "header": [],
-        "url": {
-          "raw": "http://localhost:3000/categories/ID_DA_CATEGORIA",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["categories", "ID_DA_CATEGORIA"]
-        }
+        "url": "{{baseUrl}}/categories/COLE_AQUI_O_ID_DA_CATEGORIA"
       }
     },
     {
-      "name": "Criar Transação",
+      "name": "Criar transação",
       "request": {
         "method": "POST",
         "header": [
@@ -106,47 +93,34 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"description\": \"Salário de outubro\",\n  \"value\": 3500.50,\n  \"date\": \"2026-04-29\",\n  \"categoryId\": \"ID_DA_CATEGORIA\"\n}"
+          "raw": "{\n  \"description\": \"Salário de outubro\",\n  \"value\": 3500.50,\n  \"date\": \"2026-04-29\",\n  \"categoryId\": \"COLE_AQUI_O_ID_DA_CATEGORIA_INCOME\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         },
-        "url": {
-          "raw": "http://localhost:3000/transactions",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["transactions"]
-        }
+        "url": "{{baseUrl}}/transactions"
       }
     },
     {
-      "name": "Listar Transações",
+      "name": "Listar transações",
       "request": {
         "method": "GET",
         "header": [],
-        "url": {
-          "raw": "http://localhost:3000/transactions",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["transactions"]
-        }
+        "url": "{{baseUrl}}/transactions"
       }
     },
     {
-      "name": "Excluir Transação",
+      "name": "Excluir transação",
       "request": {
         "method": "DELETE",
         "header": [],
-        "url": {
-          "raw": "http://localhost:3000/transactions/ID_DA_TRANSACAO",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["transactions", "ID_DA_TRANSACAO"]
-        }
+        "url": "{{baseUrl}}/transactions/COLE_AQUI_O_ID_DA_TRANSACAO"
       }
     },
     {
-      "name": "Validar Erros",
+      "name": "Validar erros",
       "request": {
         "method": "POST",
         "header": [
@@ -157,15 +131,14 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"description\": \"\"\n}"
+          "raw": "{\n  \"description\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         },
-        "url": {
-          "raw": "http://localhost:3000/transactions",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["transactions"]
-        }
+        "url": "{{baseUrl}}/transactions"
       }
     }
   ]

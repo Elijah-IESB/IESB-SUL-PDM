@@ -5,7 +5,7 @@
  * @param {Error} err - Erro capturado por algum handler.
  * @param {import("express").Request} req - Requisição HTTP.
  * @param {import("express").Response} res - Resposta HTTP.
- * @param {import("express").NextFunction} next - Próximo middleware (não usado, mas exigido pela assinatura).
+ * @param {import("express").NextFunction} next - Próximo middleware.
  * @returns {void}
  */
 export function errorHandler(err, req, res, next) {
