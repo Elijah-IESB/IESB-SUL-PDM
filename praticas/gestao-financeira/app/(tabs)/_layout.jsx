@@ -1,9 +1,37 @@
-import { Tabs } from "expo-router";
+import { Tabs, router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { useContext, useEffect } from "react";
+import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../constants/colors";
+import { MoneyContext } from "../../contexts/GlobalState";
 
 export default function TabsLayout() {
+  const { currentUser, logout } = useContext(MoneyContext);
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace("/login");
+    }
+  }, [currentUser]);
+
+  if (!currentUser) return null;
+
+  function handleLogout() {
+    Alert.alert("Sair", "Deseja voltar para a tela de login?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Sair",
+        style: "destructive",
+        onPress: () => {
+          logout();
+          router.replace("/login");
+        },
+      },
+    ]);
+  }
+
   return (
     <Tabs
       screenOptions={{
@@ -14,10 +42,20 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.inactive,
         tabBarStyle: {
-          height: 60,
+          height: 64 + insets.bottom,
           paddingTop: 5,
+          paddingBottom: Math.max(insets.bottom, 8),
           backgroundColor: colors.background,
         },
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={handleLogout}
+            hitSlop={8}
+            style={styles.logoutButton}
+          >
+            <MaterialIcons name="logout" size={24} color={colors.primaryContrast} />
+          </TouchableOpacity>
+        ),
         tabBarButton: (props) => (
           <TouchableOpacity {...props} activeOpacity={0.8} />
         ),
@@ -66,6 +104,15 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="my-data"
+        options={{
+          title: "Meus dados",
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="person" size={28} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
@@ -79,5 +126,8 @@ const styles = StyleSheet.create({
     width: 64,
     borderRadius: 32,
     backgroundColor: colors.primary,
+  },
+  logoutButton: {
+    paddingHorizontal: 16,
   },
 });

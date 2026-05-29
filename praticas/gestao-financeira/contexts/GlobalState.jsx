@@ -4,9 +4,10 @@ import { api } from "../services/api";
 export const MoneyContext = createContext();
 
 export default function GlobalState({ children }) {
+  const [currentUser, setCurrentUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const refresh = useCallback(async () => {
@@ -29,8 +30,55 @@ export default function GlobalState({ children }) {
   }, []);
 
   useEffect(() => {
-    refresh();
+    if (currentUser) {
+      refresh();
+    }
+  }, [currentUser, refresh]);
+
+  const register = useCallback(async (data) => {
+    const result = await api.register(data);
+    api.setCurrentUserId(result.user.id);
+    setCurrentUser(result.user);
+    await refresh();
+    return result.user;
   }, [refresh]);
+
+  const login = useCallback(async (data) => {
+    const result = await api.login(data);
+    api.setCurrentUserId(result.user.id);
+    setCurrentUser(result.user);
+    await refresh();
+    return result.user;
+  }, [refresh]);
+
+  const logout = useCallback(() => {
+    api.setCurrentUserId(null);
+    setCurrentUser(null);
+    setTransactions([]);
+    setCategories([]);
+  }, []);
+
+  const requestPasswordReset = useCallback(async (data) => {
+    return api.requestPasswordReset(data);
+  }, []);
+
+  const resetPassword = useCallback(async (data) => {
+    return api.resetPassword(data);
+  }, []);
+
+  const updateProfile = useCallback(async (data) => {
+    const result = await api.updateProfile(currentUser.id, data);
+    setCurrentUser(result.user);
+    return result.user;
+  }, [currentUser]);
+
+  const deleteAccount = useCallback(async (password) => {
+    await api.deleteAccount(currentUser.id, password);
+    api.setCurrentUserId(null);
+    setCurrentUser(null);
+    setTransactions([]);
+    setCategories([]);
+  }, [currentUser]);
 
   const addTransaction = useCallback(async (data) => {
     const created = await api.createTransaction(data);
@@ -85,6 +133,14 @@ export default function GlobalState({ children }) {
   return (
     <MoneyContext.Provider
       value={{
+        currentUser,
+        register,
+        login,
+        logout,
+        requestPasswordReset,
+        resetPassword,
+        updateProfile,
+        deleteAccount,
         transactions,
         categories,
         loading,

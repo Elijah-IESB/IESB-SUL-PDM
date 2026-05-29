@@ -2,6 +2,7 @@ import { useContext, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,10 +10,13 @@ import {
   View,
 } from "react-native";
 import { PieChart } from "react-native-chart-kit";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { MoneyContext } from "../../contexts/GlobalState";
 import SummaryItem from "../../components/SummaryItem";
 import { globalStyles } from "../../styles/globalStyles";
 import { colors } from "../../constants/colors";
+import { api } from "../../services/api";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -86,6 +90,27 @@ export default function Summary() {
     setAno(String(novoAno));
   }
 
+  async function exportarExcel() {
+    try {
+      const { url, headers } = api.monthlySummaryExport(mes, ano);
+      const fileUri = `${FileSystem.documentDirectory}resumo-${ano}-${mes}.xlsx`;
+      const result = await FileSystem.downloadAsync(url, fileUri, { headers });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(result.uri, {
+          mimeType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          dialogTitle: `Resumo ${mes}/${ano}`,
+          UTI: "org.openxmlformats.spreadsheetml.sheet",
+        });
+      } else {
+        Alert.alert("Arquivo gerado", result.uri);
+      }
+    } catch (e) {
+      Alert.alert("Erro ao exportar", e.message ?? "Tente novamente.");
+    }
+  }
+
   if (loading && categories.length === 0) {
     return (
       <View style={[globalStyles.screenContainer, styles.center]}>
@@ -113,6 +138,10 @@ export default function Summary() {
         </View>
 
         <Text style={styles.sectionTitle}>Resumo por categoria</Text>
+
+        <TouchableOpacity onPress={exportarExcel} style={styles.exportButton}>
+          <Text style={styles.exportButtonText}>Exportar mês em Excel</Text>
+        </TouchableOpacity>
 
         {categories.map((category) => (
           <SummaryItem
@@ -182,6 +211,17 @@ const styles = StyleSheet.create({
     color: colors.primaryContrast,
     fontSize: 18,
     fontWeight: "bold",
+  },
+  exportButton: {
+    backgroundColor: colors.primary,
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  exportButtonText: {
+    color: colors.primaryContrast,
+    fontWeight: "800",
   },
   periodText: {
     fontSize: 20,

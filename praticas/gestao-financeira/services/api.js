@@ -11,6 +11,15 @@
  * Você pode sobrescrever via variável de ambiente do Expo (EXPO_PUBLIC_API_URL).
  */
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:3000";
+let currentUserId = null;
+
+function buildHeaders(headers = {}) {
+  return {
+    "Content-Type": "application/json",
+    ...(currentUserId ? { "x-user-id": currentUserId } : {}),
+    ...headers,
+  };
+}
 
 /**
  * Função utilitária que executa uma requisição HTTP e padroniza o tratamento de erros.
@@ -22,19 +31,72 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:3000";
  */
 async function request(path, options = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers: buildHeaders(options.headers),
   });
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`HTTP ${response.status}: ${text}`);
+    let message = text || `HTTP ${response.status}`;
+
+    try {
+      const payload = JSON.parse(text);
+      message = payload.error ?? payload.message ?? message;
+      if (payload.details?.[0]?.message) {
+        message = payload.details[0].message;
+      }
+    } catch {
+      // Mantem a mensagem original quando a API nao retorna JSON.
+    }
+
+    throw new Error(message);
   }
 
   return response.status === 204 ? null : response.json();
 }
 
 export const api = {
+  setCurrentUserId: (userId) => {
+    currentUserId = userId;
+  },
+
+  /**
+   * Cria um usuario e devolve os dados publicos da conta.
+   * @param {{name: string, email: string, password: string}} data
+   * @returns {Promise<{user: object}>}
+   */
+  register: (data) =>
+    request("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+
+  /**
+   * Valida credenciais contra o banco de dados.
+   * @param {{email: string, password: string}} data
+   * @returns {Promise<{user: object}>}
+   */
+  login: (data) =>
+    request("/auth/login", { method: "POST", body: JSON.stringify(data) }),
+
+  requestPasswordReset: (data) =>
+    request("/auth/request-password-reset", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  resetPassword: (data) =>
+    request("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateProfile: (id, data) =>
+    request(`/auth/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+
+  deleteAccount: (id, password) =>
+    request(`/auth/users/${id}`, {
+      method: "DELETE",
+      body: JSON.stringify({ password }),
+    }),
+
   /**
    * Lista todas as categorias cadastradas.
    * @returns {Promise<Array>} Lista de categorias ordenadas por displayName.
@@ -96,4 +158,9 @@ export const api = {
    */
   deleteTransaction: (id) =>
     request(`/transactions/${id}`, { method: "DELETE" }),
+
+  monthlySummaryExport: (month, year) => ({
+    url: `${BASE_URL}/transactions/export?month=${month}&year=${year}`,
+    headers: buildHeaders(),
+  }),
 };

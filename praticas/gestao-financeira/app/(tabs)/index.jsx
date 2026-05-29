@@ -18,17 +18,21 @@ import { globalStyles } from "../../styles/globalStyles";
 import { colors } from "../../constants/colors";
 
 export default function Transactions() {
-  const { transactions, loading, error, refresh, removeTransaction } =
+  const { currentUser, transactions, loading, error, refresh, removeTransaction } =
     useContext(MoneyContext);
 
   const { userName } = useLocalSearchParams();
-  const nomeExibicao = userName ? String(userName) : "Usuário";
+  const nomeAutenticado = currentUser?.name ?? (userName ? String(userName) : "Usuario");
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  const [mes, setMes] = useState("05");
-  const [ano, setAno] = useState("2026");
+  const today = new Date();
+  const [mes] = useState(String(today.getMonth() + 1).padStart(2, "0"));
+  const [ano] = useState(String(today.getFullYear()));
 
   const transacoesFiltradas = transactions.filter(
     (t) => t.date && t.date.startsWith(`${ano}-${mes}`)
@@ -87,7 +91,7 @@ export default function Transactions() {
   return (
     <View style={globalStyles.screenContainer}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Olá, {nomeExibicao}! 👋</Text>
+        <Text style={styles.welcomeText}>{greeting}, {nomeAutenticado}!</Text>
       </View>
 
       <View style={styles.filterContainer}>

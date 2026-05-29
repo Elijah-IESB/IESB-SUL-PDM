@@ -27,5 +27,9 @@ export function errorHandler(err, req, res, next) {
     return res.status(400).json({ error: "Referência inválida (FK não existe)" });
   }
 
+  if (err.status) {
+    return res.status(err.status).json({ error: err.message });
+  }
+
   res.status(500).json({ error: "Erro interno do servidor" });
 }

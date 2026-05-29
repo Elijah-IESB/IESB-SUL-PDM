@@ -3,13 +3,14 @@ import {
   Alert,
   Keyboard,
   KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { useContext, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { globalStyles } from "../../styles/globalStyles";
 import Button from "../../components/Button";
 import DescriptionInput from "../../components/DescriptionInput";
@@ -50,9 +51,11 @@ export default function AddTransactions() {
   const [submitting, setSubmitting] = useState(false);
 
   // mantém o categoryId default coerente com a lista carregada
-  if (!form.categoryId && defaultCategoryId) {
-    setForm((prev) => ({ ...prev, categoryId: defaultCategoryId }));
-  }
+  useEffect(() => {
+    if (!form.categoryId && defaultCategoryId) {
+      setForm((prev) => ({ ...prev, categoryId: defaultCategoryId }));
+    }
+  }, [defaultCategoryId, form.categoryId]);
 
   const handleAdd = async () => {
     if (!form.description.trim()) {
@@ -108,9 +111,17 @@ export default function AddTransactions() {
   }
 
   return (
-    <KeyboardAvoidingView style={globalStyles.screenContainer}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={90}
+      style={globalStyles.screenContainer}
+    >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView style={globalStyles.content}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          style={globalStyles.content}
+          contentContainerStyle={styles.scrollContent}
+        >
           <View style={styles.form}>
             <DescriptionInput
               form={form}
@@ -143,6 +154,9 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 40,
     marginTop: 10,
+  },
+  scrollContent: {
+    paddingBottom: 42,
   },
   center: {
     alignItems: "center",

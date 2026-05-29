@@ -3,12 +3,15 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { MoneyContext } from "../../contexts/GlobalState";
 import Button from "../../components/Button";
@@ -25,59 +28,90 @@ const PRESET_COLORS = [
   "#FFB6B6",
   "#9ED9A9",
   "#F5C26B",
+  "#7DD3FC",
+  "#A7F3D0",
 ];
 
-/**
- * Tela "Categorias".
- *
- * Permite listar, criar e excluir categorias. Categorias com `isDefault=true`
- * vêm do seed do back-end e não podem ser removidas — o servidor barra a
- * exclusão e a tela apenas oculta o botão de remover para essas linhas.
- *
- * @returns {JSX.Element}
- */
+const PRESET_ICONS = [
+  "label",
+  "restaurant",
+  "local-grocery-store",
+  "home",
+  "school",
+  "directions-car",
+  "health-and-safety",
+  "flight",
+  "shopping-bag",
+  "paid",
+  "savings",
+  "credit-card",
+  "account-balance-wallet",
+  "emoji-events",
+];
+
+function normalize(value) {
+  return value.trim().toLowerCase();
+}
+
 export default function CategoriesScreen() {
-  const { categories, loading, addCategory, removeCategory } =
+  const { categories, loading, addCategory, updateCategory, removeCategory } =
     useContext(MoneyContext);
 
-  const [name, setName] = useState("");
+  const [editingId, setEditingId] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [icon, setIcon] = useState("label");
   const [background, setBackground] = useState(PRESET_COLORS[0]);
+  const [isIncome, setIsIncome] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const isEditing = Boolean(editingId);
+
   const resetForm = () => {
-    setName("");
+    setEditingId(null);
     setDisplayName("");
     setIcon("label");
     setBackground(PRESET_COLORS[0]);
+    setIsIncome(false);
   };
 
-  const handleCreate = async () => {
-    if (!name.trim() || name.trim().length < 2) {
-      Alert.alert("Informe um identificador (mín. 2 letras, sem espaços).");
-      return;
-    }
+  const validateDuplicate = () => {
+    const nextName = normalize(displayName);
+    return categories.some(
+      (category) =>
+        category.id !== editingId &&
+        normalize(category.displayName) === nextName
+    );
+  };
+
+  const handleSave = async () => {
     if (!displayName.trim() || displayName.trim().length < 2) {
-      Alert.alert("Informe o nome de exibição (mín. 2 letras).");
+      Alert.alert("Informe o nome da categoria.");
       return;
     }
-    if (!icon.trim()) {
-      Alert.alert("Informe o nome do ícone (Material Icons).");
+    if (validateDuplicate()) {
+      Alert.alert("Categoria duplicada", "Ja existe uma categoria com esse nome.");
       return;
     }
 
     setSubmitting(true);
+
     try {
-      await addCategory({
-        name: name.trim().toLowerCase().replace(/\s+/g, "_"),
+      const payload = {
         displayName: displayName.trim(),
-        icon: icon.trim(),
+        icon,
         background,
-        isIncome: false,
-      });
+        isIncome,
+      };
+
+      if (isEditing) {
+        await updateCategory(editingId, payload);
+        Alert.alert("Categoria atualizada!");
+      } else {
+        await addCategory(payload);
+        Alert.alert("Categoria criada!");
+      }
+
       resetForm();
-      Alert.alert("Categoria criada!");
     } catch (e) {
       Alert.alert("Erro ao salvar", e.message ?? "Tente novamente.");
     } finally {
@@ -85,26 +119,35 @@ export default function CategoriesScreen() {
     }
   };
 
+  const handleEdit = (item) => {
+    if (item.isDefault) {
+      Alert.alert("Categoria padrao", "Categorias padrao nao podem ser alteradas.");
+      return;
+    }
+
+    setEditingId(item.id);
+    setDisplayName(item.displayName);
+    setIcon(item.icon);
+    setBackground(item.background);
+    setIsIncome(Boolean(item.isIncome));
+  };
+
   const handleDelete = (item) => {
-    Alert.alert(
-      "Excluir categoria",
-      `Deseja excluir "${item.displayName}"?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await removeCategory(item.id);
-            } catch (e) {
-              Alert.alert("Erro ao excluir", e.message ?? "Tente novamente.");
-            }
-          },
+    Alert.alert("Excluir categoria", `Deseja excluir "${item.displayName}"?`, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await removeCategory(item.id);
+            if (editingId === item.id) resetForm();
+          } catch (e) {
+            Alert.alert("Erro ao excluir", e.message ?? "Tente novamente.");
+          }
         },
-      ],
-      { cancelable: true }
-    );
+      },
+    ]);
   };
 
   if (loading && categories.length === 0) {
@@ -116,105 +159,144 @@ export default function CategoriesScreen() {
   }
 
   return (
-    <View style={globalStyles.screenContainer}>
-      <FlatList
-        data={categories}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View style={styles.formContainer}>
-            <Text style={styles.sectionTitle}>Nova categoria</Text>
+    <SafeAreaView edges={["bottom"]} style={globalStyles.screenContainer}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={90}
+        style={styles.keyboard}
+      >
+        <FlatList
+          data={categories}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.formContainer}>
+              <Text style={styles.sectionTitle}>
+                {isEditing ? "Editar categoria" : "Nova categoria"}
+              </Text>
 
-            <View>
-              <Text style={globalStyles.inputLabel}>Identificador</Text>
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="ex.: health"
-                autoCapitalize="none"
-                style={globalStyles.input}
-              />
-            </View>
+              <View>
+                <Text style={globalStyles.inputLabel}>Nome</Text>
+                <TextInput
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="ex.: Saude"
+                  style={globalStyles.input}
+                />
+              </View>
 
-            <View>
-              <Text style={globalStyles.inputLabel}>Nome de exibição</Text>
-              <TextInput
-                value={displayName}
-                onChangeText={setDisplayName}
-                placeholder="ex.: Saúde"
-                style={globalStyles.input}
-              />
-            </View>
+              <Text style={globalStyles.inputLabel}>Tipo</Text>
+              <View style={styles.segment}>
+                <TouchableOpacity
+                  onPress={() => setIsIncome(false)}
+                  style={[styles.segmentButton, !isIncome && styles.segmentActive]}
+                >
+                  <Text style={[styles.segmentText, !isIncome && styles.segmentTextActive]}>
+                    Despesa
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setIsIncome(true)}
+                  style={[styles.segmentButton, isIncome && styles.segmentActive]}
+                >
+                  <Text style={[styles.segmentText, isIncome && styles.segmentTextActive]}>
+                    Receita
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-            <View>
-              <Text style={globalStyles.inputLabel}>Ícone (Material)</Text>
-              <TextInput
-                value={icon}
-                onChangeText={setIcon}
-                placeholder="ex.: favorite, fastfood, work"
-                autoCapitalize="none"
-                style={globalStyles.input}
-              />
-            </View>
+              <Text style={globalStyles.inputLabel}>Icone</Text>
+              <View style={styles.iconGrid}>
+                {PRESET_ICONS.map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    onPress={() => setIcon(item)}
+                    style={[styles.iconButton, icon === item && styles.iconSelected]}
+                  >
+                    <MaterialIcons
+                      name={item}
+                      size={24}
+                      color={icon === item ? colors.primaryContrast : colors.primaryText}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-            <View>
               <Text style={globalStyles.inputLabel}>Cor</Text>
               <View style={styles.colorRow}>
-                {PRESET_COLORS.map((c) => (
+                {PRESET_COLORS.map((item) => (
                   <TouchableOpacity
-                    key={c}
-                    onPress={() => setBackground(c)}
+                    key={item}
+                    onPress={() => setBackground(item)}
                     style={[
                       styles.colorDot,
-                      { backgroundColor: c },
-                      background === c && styles.colorDotSelected,
+                      { backgroundColor: item },
+                      background === item && styles.colorDotSelected,
                     ]}
                   />
                 ))}
               </View>
-            </View>
 
-            <Button onPress={handleCreate} disabled={submitting}>
-              {submitting ? "Salvando..." : "Adicionar categoria"}
-            </Button>
+              <Button onPress={handleSave} disabled={submitting}>
+                {submitting
+                  ? "Salvando..."
+                  : isEditing
+                    ? "Salvar categoria"
+                    : "Adicionar categoria"}
+              </Button>
 
-            <View style={[globalStyles.line, { marginTop: 16 }]} />
-            <Text style={styles.sectionTitle}>Categorias cadastradas</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.categoryRow}>
-            <CategoryItem category={item} />
-            <View style={styles.categoryInfo}>
-              <Text style={globalStyles.primaryText}>{item.displayName}</Text>
-              <Text style={globalStyles.secondaryText}>
-                {item.isDefault ? "padrão" : "personalizada"}
-                {item.isIncome ? " · receita" : ""}
-              </Text>
+              {isEditing && (
+                <TouchableOpacity onPress={resetForm} style={styles.cancelEdit}>
+                  <Text style={styles.cancelEditText}>Cancelar edicao</Text>
+                </TouchableOpacity>
+              )}
+
+              <View style={[globalStyles.line, { marginTop: 16 }]} />
+              <Text style={styles.sectionTitle}>Categorias cadastradas</Text>
             </View>
-            {!item.isDefault && (
-              <TouchableOpacity
-                onPress={() => handleDelete(item)}
-                hitSlop={8}
-              >
-                <MaterialIcons
-                  name="delete-outline"
-                  size={24}
-                  color={colors.negativeText}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-      />
-    </View>
+          }
+          renderItem={({ item }) => (
+            <View style={styles.categoryRow}>
+              <CategoryItem category={item} />
+              <View style={styles.categoryInfo}>
+                <Text style={globalStyles.primaryText}>{item.displayName}</Text>
+                <Text style={globalStyles.secondaryText}>
+                  {item.isDefault ? "padrao" : "personalizada"}
+                  {item.isIncome ? " · receita" : " · despesa"}
+                </Text>
+              </View>
+
+              {!item.isDefault && (
+                <View style={styles.actions}>
+                  <TouchableOpacity onPress={() => handleEdit(item)} hitSlop={8}>
+                    <MaterialIcons name="edit" size={24} color={colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={8}>
+                    <MaterialIcons
+                      name="delete-outline"
+                      size={24}
+                      color={colors.negativeText}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboard: {
+    flex: 1,
+  },
   listContent: {
     paddingVertical: 12,
     paddingHorizontal: 20,
+    paddingBottom: 36,
     gap: 12,
   },
   formContainer: {
@@ -227,14 +309,48 @@ const styles = StyleSheet.create({
     color: colors.primaryText,
     marginTop: 4,
   },
-  categoryRow: {
+  segment: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 6,
+    gap: 8,
   },
-  categoryInfo: {
+  segmentButton: {
     flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.secondaryText,
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  segmentActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  segmentText: {
+    color: colors.primaryText,
+    fontWeight: "700",
+  },
+  segmentTextActive: {
+    color: colors.primaryContrast,
+  },
+  iconGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  iconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  iconSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   colorRow: {
     flexDirection: "row",
@@ -250,6 +366,27 @@ const styles = StyleSheet.create({
   },
   colorDotSelected: {
     borderColor: colors.primaryText,
+  },
+  cancelEdit: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  cancelEditText: {
+    color: colors.negativeText,
+    fontWeight: "700",
+  },
+  categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 6,
+  },
+  categoryInfo: {
+    flex: 1,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 14,
   },
   center: {
     flex: 1,
