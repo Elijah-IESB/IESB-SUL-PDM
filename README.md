@@ -1,64 +1,134 @@
-# 📱 Programação para Dispositivos Móveis (React Native)
-Repositório base destinado às aulas teóricas e às atividades práticas da disciplina. Ao longo do semestre, utilizaremos este ambiente para construir, passo a passo, um **Aplicativo de Lista de Tarefas (To-Do List)**.
+# Gestão Financeira Mobile
 
-## 🛠️ Ambiente de Desenvolvimento
-Para acompanhar a disciplina, você precisará das seguintes ferramentas:
+Aplicativo mobile para controle financeiro pessoal, desenvolvido com **React Native/Expo** no frontend e **Node.js + Express + Prisma + MySQL** no backend.
 
-| Ferramenta | O que é? | Recomendação |
-| :--- | :--- | :--- |
-| **Editor de código** | Ambiente onde você escreverá seu código (JS, JSX, TSX). | [Visual Studio Code](https://code.visualstudio.com/) | 
-| **Ambiente de Execução** | Necessário para rodar o Metro Bundler e gerenciar pacotes. | [Node.js (versão LTS)](https://nodejs.org/pt-br/) |
-| **Versionador** | Controla e registra o histórico de alterações do código. | [Git](https://git-scm.com/) |
-| **Testes Físicos** | App para espelhar o código do seu computador direto no celular. | [Expo Go (Android/iOS)](https://expo.dev/go) |
+O projeto permite que cada usuário gerencie suas próprias receitas, despesas, categorias e dados pessoais de forma separada, com autenticação, recuperação de senha por e-mail, resumo mensal e exportação para Excel.
 
-## 📂 Estrutura de Pastas
-Este repositório está organizado da seguinte forma:
-- **`aulas/`**: Contém os resumos teóricos e conceitos abordados em cada encontro.
-- **`praticas/`**: Contém o código das atividades práticas desenvolvidas (nosso App de Tarefas).
+## Projeto em Destaque
 
-## 🚀 Fluxo de Trabalho Acadêmico
-As atividades seguem um fluxo de trabalho profissional baseado no modelo [GitFlow](https://www.atlassian.com/br/git/tutorials/comparing-workflows/gitflow-workflow).
+### Aplicativo de Gestão Financeira
 
-### 1. Configuração Inicial (Realizar apenas uma vez)
-1. **Criar Repositório**: Clique no botão verde `Use this template`, no topo desta página, e escolha `Create a new repository` para criar a sua cópia.
-2. **Clonar Repositório**: Faça o clone do *seu* repositório para a sua máquina:
-```bash
-git clone [https://github.com/SEU_USUARIO/NOME_DO_SEU_REPOSITORIO.git](https://github.com/SEU_USUARIO/NOME_DO_SEU_REPOSITORIO.git)
+O foco deste repositório é o app em:
+
+- **Frontend mobile:** [`praticas/gestao-financeira`](./praticas/gestao-financeira)
+- **Backend API:** [`praticas/gestao-financeira-api`](./praticas/gestao-financeira-api)
+
+## Principais Funcionalidades
+
+- Cadastro e login de usuários.
+- Recuperação de senha por token enviado por e-mail.
+- Dados isolados por usuário.
+- Edição de dados pessoais.
+- Exclusão de conta com confirmação e senha atual.
+- Cadastro, edição e exclusão de categorias personalizadas.
+- Categorias padrão protegidas contra alteração.
+- Separação entre receitas e despesas.
+- Lançamento, edição e exclusão de transações.
+- Resumo mensal por categoria.
+- Gráfico de despesas.
+- Exportação do resumo mensal em Excel.
+- Consulta de CEP via ViaCEP.
+- Estados e cidades oficiais via API do IBGE.
+
+## Tecnologias
+
+### Mobile
+
+- React Native
+- Expo
+- Expo Router
+- React Context API
+- React Native Chart Kit
+- Expo File System
+- Expo Sharing
+
+### Backend
+
+- Node.js
+- Express
+- Prisma ORM
+- MySQL
+- Zod
+- Nodemailer
+- ExcelJS
+
+## Estrutura
+
+```text
+IESB-SUL-PDM/
+├── praticas/
+│   ├── gestao-financeira/       # Aplicativo mobile Expo
+│   └── gestao-financeira-api/   # API REST com Express, Prisma e MySQL
+├── aulas/                       # Conteúdos acadêmicos da disciplina
+└── README.md
 ```
 
-### 2.Configurar Git: Certifique-se de que seu nome e e-mail estão corretos:
-```bash
-git config --global user.name "Seu Nome"
-git config --global user.email "seu@email.com"
-```
+## Como Rodar
 
-## Ciclo de Cada Prática (Repetir a cada aula)
-Para cada nova funcionalidade do nosso App, siga este fluxo:
-1. **Crie a Issue:** Acesse a aba Issues no seu GitHub, clique em New issue e use o template da prática do dia.
-2. **Crie a Branch:** A partir da branch main (ou develop), crie uma nova branch para a funcionalidade:
+### 1. API
+
 ```bash
-git checkout -b feature/praticaXX
-```
-3. Rode o Projeto: Acesse a pasta correspondente, instale as dependências e inicie o Expo:
-```bash
+cd praticas/gestao-financeira-api
 npm install
-npx expo start
+npx prisma migrate dev
+npm run prisma:seed
+npm run dev
 ```
-4. Desenvolva e Teste: Escreva o código solicitado na prática e teste no seu celular usando o Expo Go.
-5. Salve e Envie (Commit & Push):
+
+Crie um arquivo `.env` na pasta da API com:
+
+```env
+DATABASE_URL="mysql://USUARIO:SENHA@localhost:3306/gestao_financeira"
+PORT=3000
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=seu-email@dominio.com
+SMTP_PASS=sua-senha-de-app
+MAIL_FROM="Gestão Financeira <seu-email@dominio.com>"
+```
+
+### 2. Aplicativo
+
 ```bash
-git add .
-git commit -m "Feat: Finaliza a implementação da Prática XX"
-git push origin feature/praticaXX
+cd praticas/gestao-financeira
+npm install
+npx expo start -c
 ```
-6. Solicite a Revisão (Pull Request): No GitHub, abra um Pull Request da sua branch feature/praticaXX para a branch principal.
 
-- ⚠️ Atenção!
-- Se o check ✅ não aparecer no `Pull Request`, há erros que precisam ser corrigidos antes da avaliação.
+Configure o arquivo `.env` do app:
 
-## Feedback e Avaliação
-Envie o link do seu Pull Request pela plataforma de ensino. A avaliação usará o sistema de **Code Review:**
-- **Approve (Aprovado):** Código cumpre os requisitos. Faça o merge!
-- **Request Changes (Solicitação de Ajustes):** Há bugs ou melhorias necessárias. Corrija localmente, faça um novo commit e push na mesma branch, e avise no PR para nova revisão.
+```env
+EXPO_PUBLIC_API_URL=http://IP_DA_SUA_MAQUINA:3000
+```
 
+Para celular físico, o IP precisa ser o endereço do computador na mesma rede Wi-Fi.
 
+## Banco de Dados
+
+O projeto usa **MySQL** com Prisma. As principais entidades são:
+
+- `User`
+- `Category`
+- `Transaction`
+
+Cada transação e categoria personalizada pertence a um usuário específico. Categorias padrão ficam disponíveis para todos, mas não podem ser editadas ou removidas.
+
+## Segurança
+
+- Senhas são salvas com hash.
+- Recuperação de senha usa token temporário.
+- O token expira em 15 minutos.
+- Exclusão de conta exige a senha atual.
+- Dados financeiros são filtrados por usuário autenticado.
+
+## Exportação
+
+O resumo mensal pode ser exportado em `.xlsx`, permitindo que o usuário use seus dados em planilhas como Excel, Google Sheets ou LibreOffice.
+
+## Autor
+
+Desenvolvido por **Elias Cordeiro** para a disciplina de Programação para Dispositivos Móveis.
+
+GitHub: [Elijah-IESB](https://github.com/Elijah-IESB)
