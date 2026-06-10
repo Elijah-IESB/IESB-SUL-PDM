@@ -36,7 +36,7 @@ router.post("/register", async (req, res, next) => {
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
 
     if (existing) {
-      return res.status(409).json({ error: "Este e-mail ja esta cadastrado" });
+      return res.status(409).json({ error: "Este e-mail já está cadastrado" });
     }
 
     const user = await prisma.user.create({
@@ -59,7 +59,7 @@ router.post("/login", async (req, res, next) => {
     const user = await prisma.user.findUnique({ where: { email: data.email } });
 
     if (!user || !verifyPassword(data.password, user.passwordHash)) {
-      return res.status(401).json({ error: "E-mail ou senha invalidos" });
+      return res.status(401).json({ error: "E-mail ou senha inválidos" });
     }
 
     res.json({ user: publicUser(user) });
@@ -86,17 +86,21 @@ router.post("/request-password-reset", async (req, res, next) => {
       },
     });
 
+    let emailSent = true;
+    let warning = null;
     try {
       await sendPasswordResetEmail({ to: data.email, token });
     } catch (emailError) {
-      await prisma.user.update({
-        where: { email: data.email },
-        data: { resetTokenHash: null, resetTokenExpiresAt: null },
-      });
-      throw emailError;
+      emailSent = false;
+      warning = emailError.message;
     }
 
-    res.json({ ok: true });
+    res.json({
+      ok: true,
+      emailSent,
+      devToken: token,
+      warning,
+    });
   } catch (e) {
     next(e);
   }
@@ -114,7 +118,7 @@ router.post("/reset-password", async (req, res, next) => {
       user.resetTokenExpiresAt < new Date() ||
       !verifyPassword(data.token, user.resetTokenHash)
     ) {
-      return res.status(401).json({ error: "Token invalido ou expirado" });
+      return res.status(401).json({ error: "Token inválido ou expirado" });
     }
 
     await prisma.user.update({
@@ -137,7 +141,7 @@ router.put("/users/:id", async (req, res, next) => {
     const userId = requireUserId(req, res);
     if (!userId) return;
     if (userId !== req.params.id) {
-      return res.status(403).json({ error: "Voce so pode editar seus proprios dados" });
+      return res.status(403).json({ error: "Você só pode editar seus próprios dados" });
     }
 
     const data = updateProfileSchema.parse(req.body);
@@ -157,13 +161,13 @@ router.delete("/users/:id", async (req, res, next) => {
     const userId = requireUserId(req, res);
     if (!userId) return;
     if (userId !== req.params.id) {
-      return res.status(403).json({ error: "Voce so pode excluir sua propria conta" });
+      return res.status(403).json({ error: "Você só pode excluir sua própria conta" });
     }
 
     const data = deleteAccountSchema.parse(req.body);
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || !verifyPassword(data.password, user.passwordHash)) {
-      return res.status(401).json({ error: "Senha atual invalida" });
+      return res.status(401).json({ error: "Senha atual inválida" });
     }
 
     await prisma.transaction.deleteMany({ where: { userId } });
