@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 
 import { MoneyContext } from "../../contexts/GlobalState";
 import TransactionItem from "../../components/TransactionItem";
@@ -154,15 +154,27 @@ export default function Transactions() {
             <TouchableOpacity
               style={[styles.modalButton, styles.btnEdit]}
               onPress={handleEditar}
+              accessibilityLabel="Editar transação"
             >
-              <Text style={styles.btnText}>✏️ Editar</Text>
+              <View style={styles.modalButtonContent}>
+                <MaterialIcons name="edit" size={22} color={colors.primaryContrast} />
+                <Text style={styles.btnText}>Editar</Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.modalButton, styles.btnDelete]}
               onPress={handleExcluir}
+              accessibilityLabel="Excluir transação"
             >
-              <Text style={styles.btnText}>🗑️ Excluir</Text>
+              <View style={styles.modalButtonContent}>
+                <MaterialIcons
+                  name="delete-outline"
+                  size={24}
+                  color={colors.primaryContrast}
+                />
+                <Text style={styles.btnText}>Excluir</Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -268,6 +280,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 12,
     alignItems: "center",
+  },
+  modalButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   btnEdit: {
     backgroundColor: "#4F46E5",
