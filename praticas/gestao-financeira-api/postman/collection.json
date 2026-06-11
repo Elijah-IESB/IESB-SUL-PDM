@@ -2,7 +2,7 @@
   "info": {
     "name": "Gestão Financeira API",
     "_postman_id": "12345678-abcd-1234-abcd-123456789000",
-    "description": "Collection para validar a API de Gestão Financeira conforme o roteiro do professor.",
+    "description": "Collection para validar a API de Gestão Financeira conforme o roteiro do professor. Execute em ordem: a collection salva automaticamente os ids criados.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -10,11 +10,42 @@
       "key": "baseUrl",
       "value": "http://localhost:3000",
       "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "incomeCategoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transactionId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
     {
       "name": "Health-check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('API saudável', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.ok).to.eql(true);",
+              "  pm.expect(body.name).to.eql('gestao-financeira-api');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -23,6 +54,27 @@
     },
     {
       "name": "Listar categorias",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Lista categorias', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const categories = pm.response.json();",
+              "  pm.expect(categories).to.be.an('array');",
+              "  pm.expect(categories.length).to.be.at.least(5);",
+              "  const income = categories.find((category) => category.name === 'income');",
+              "  pm.expect(income, 'categoria income').to.exist;",
+              "  pm.collectionVariables.set('incomeCategoryId', income.id);",
+              "  const custom = categories.find((category) => !category.isDefault && category.name && category.name.startsWith('health'));",
+              "  if (custom) pm.collectionVariables.set('categoryId', custom.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -31,6 +83,26 @@
     },
     {
       "name": "Criar categoria",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Cria categoria ou identifica duplicada', function () {",
+              "  pm.expect([201, 409]).to.include(pm.response.code);",
+              "  if (pm.response.code === 201) {",
+              "    const category = pm.response.json();",
+              "    pm.collectionVariables.set('categoryId', category.id);",
+              "    pm.expect(category.id).to.be.a('string');",
+              "  } else {",
+              "    console.warn('Categoria health já existe. Rode Listar categorias antes de atualizar/excluir para capturar o id.');",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [
@@ -53,6 +125,21 @@
     },
     {
       "name": "Atualizar categoria",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Atualiza categoria criada', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const category = pm.response.json();",
+              "  pm.expect(category.displayName).to.eql('Saúde e Bem-estar');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "PUT",
         "header": [
@@ -70,19 +157,71 @@
             }
           }
         },
-        "url": "{{baseUrl}}/categories/COLE_AQUI_O_ID_DA_CATEGORIA"
+        "url": "{{baseUrl}}/categories/{{categoryId}}"
       }
     },
     {
       "name": "Excluir categoria",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Exclui categoria criada', function () {",
+              "  pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "DELETE",
         "header": [],
-        "url": "{{baseUrl}}/categories/COLE_AQUI_O_ID_DA_CATEGORIA"
+        "url": "{{baseUrl}}/categories/{{categoryId}}"
+      }
+    },
+    {
+      "name": "Tentar excluir categoria padrão",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Bloqueia exclusão de categoria padrão', function () {",
+              "  pm.response.to.have.status(400);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.error).to.eql('Categorias padrão não podem ser excluídas');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/categories/{{incomeCategoryId}}"
       }
     },
     {
       "name": "Criar transação",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Cria transação com categoria aninhada', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const transaction = pm.response.json();",
+              "  pm.collectionVariables.set('transactionId', transaction.id);",
+              "  pm.expect(transaction.category).to.be.an('object');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [
@@ -93,7 +232,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"description\": \"Salário de outubro\",\n  \"value\": 3500.50,\n  \"date\": \"2026-04-29\",\n  \"categoryId\": \"COLE_AQUI_O_ID_DA_CATEGORIA_INCOME\"\n}",
+          "raw": "{\n  \"description\": \"Salário de outubro\",\n  \"value\": 3500.50,\n  \"date\": \"2026-04-29\",\n  \"categoryId\": \"{{incomeCategoryId}}\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -105,6 +244,20 @@
     },
     {
       "name": "Listar transações",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Lista transações', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json()).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -113,14 +266,43 @@
     },
     {
       "name": "Excluir transação",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Exclui transação criada', function () {",
+              "  pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "DELETE",
         "header": [],
-        "url": "{{baseUrl}}/transactions/COLE_AQUI_O_ID_DA_TRANSACAO"
+        "url": "{{baseUrl}}/transactions/{{transactionId}}"
       }
     },
     {
       "name": "Validar erros",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Validação Zod bloqueia body inválido', function () {",
+              "  pm.response.to.have.status(400);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.error).to.eql('Dados inválidos');",
+              "  pm.expect(body.details).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [
