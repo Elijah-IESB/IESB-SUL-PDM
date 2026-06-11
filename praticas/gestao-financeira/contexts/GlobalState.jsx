@@ -17,10 +17,14 @@ export default function GlobalState({ children }) {
     api.setCurrentUserId(user?.id ?? null);
     setCurrentUser(user);
 
-    if (user) {
-      await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
-    } else {
-      await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+    try {
+      if (user) {
+        await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+      } else {
+        await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.warn("Não foi possível persistir a sessão local.", e);
     }
   }, []);
 
@@ -72,16 +76,14 @@ export default function GlobalState({ children }) {
   const register = useCallback(async (data) => {
     const result = await api.register(data);
     await persistUser(result.user);
-    await refresh();
     return result.user;
-  }, [persistUser, refresh]);
+  }, [persistUser]);
 
   const login = useCallback(async (data) => {
     const result = await api.login(data);
     await persistUser(result.user);
-    await refresh();
     return result.user;
-  }, [persistUser, refresh]);
+  }, [persistUser]);
 
   const logout = useCallback(async () => {
     await persistUser(null);

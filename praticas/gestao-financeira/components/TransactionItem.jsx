@@ -13,6 +13,10 @@ import CategoryItem from "./CategoryItem";
  */
 export default function TransactionItem({ category, date, description, value }) {
   const numericValue = Number(value);
+  const parsedDate = new Date(date);
+  const formattedDate = Number.isNaN(parsedDate.getTime())
+    ? "Data inválida"
+    : parsedDate.toLocaleDateString("pt-BR");
   const valueStyle = category?.isIncome
     ? globalStyles.positiveText
     : globalStyles.negativeText;
@@ -23,12 +27,14 @@ export default function TransactionItem({ category, date, description, value }) 
         <CategoryItem category={category} />
         <View style={styles.textContainer}>
           <Text style={globalStyles.secondaryText}>
-            {new Date(date).toLocaleDateString("pt-BR")}
+            {formattedDate}
           </Text>
           <View style={styles.bottomLineContainer}>
-            <Text style={globalStyles.primaryText}>{description}</Text>
+            <Text style={[globalStyles.primaryText, styles.description]}>
+              {description || "Sem descrição"}
+            </Text>
             <Text style={valueStyle}>
-              {numericValue.toLocaleString("pt-BR", {
+              {(Number.isFinite(numericValue) ? numericValue : 0).toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL",
               })}
@@ -59,5 +65,9 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 10,
+  },
+  description: {
+    flex: 1,
   },
 });

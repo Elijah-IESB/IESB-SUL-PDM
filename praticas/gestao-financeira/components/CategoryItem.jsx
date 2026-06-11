@@ -9,10 +9,13 @@ import { colors } from "../constants/colors";
  * @returns {JSX.Element}
  */
 export default function CategoryItem({ category }) {
+  const backgroundColor = category?.background ?? colors.secondaryText;
+  const icon = category?.icon ?? "help-outline";
+
   return (
-    <View style={[styles.background, { backgroundColor: category.background }]}>
+    <View style={[styles.background, { backgroundColor }]}>
       <MaterialIcons
-        name={category.icon}
+        name={icon}
         size={24}
         color={colors.primaryContrast}
       />

@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -17,13 +17,14 @@ import { colors } from "../constants/colors";
 
 export default function EditTransaction() {
   const { id } = useLocalSearchParams();
+  const transactionId = Array.isArray(id) ? id[0] : id;
 
   const { transactions, categories, updateTransaction } =
     useContext(MoneyContext);
 
   const transaction = useMemo(
-    () => transactions.find((t) => t.id === id),
-    [transactions, id]
+    () => transactions.find((t) => t.id === transactionId),
+    [transactions, transactionId]
   );
 
   const [description, setDescription] = useState(
@@ -38,11 +39,46 @@ export default function EditTransaction() {
     transaction?.categoryId ?? categories[0]?.id
   );
 
+  useEffect(() => {
+    if (transaction) {
+      setDescription(transaction.description ?? "");
+      setValue(String(transaction.value ?? ""));
+      setCategoryId(transaction.categoryId ?? categories[0]?.id ?? "");
+    }
+  }, [transaction, categories]);
+
+  useEffect(() => {
+    if (!categoryId && categories[0]?.id) {
+      setCategoryId(categories[0].id);
+    }
+  }, [categoryId, categories]);
+
   async function handleSave() {
+    if (!transaction) {
+      Alert.alert("Erro", "Transação não encontrada.");
+      return;
+    }
+
+    if (!description.trim()) {
+      Alert.alert("Erro", "Informe a descrição.");
+      return;
+    }
+
+    const numericValue = Number(String(value).replace(",", "."));
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      Alert.alert("Erro", "Informe um valor maior que zero.");
+      return;
+    }
+
+    if (!categoryId) {
+      Alert.alert("Erro", "Selecione uma categoria.");
+      return;
+    }
+
     try {
-      await updateTransaction(id, {
-        description,
-        value: Number(value),
+      await updateTransaction(transactionId, {
+        description: description.trim(),
+        value: numericValue,
         categoryId,
         date: transaction.date,
       });
@@ -52,6 +88,17 @@ export default function EditTransaction() {
     } catch (e) {
       Alert.alert("Erro", e.message);
     }
+  }
+
+  if (!transaction) {
+    return (
+      <View style={[globalStyles.screenContainer, styles.center]}>
+        <Text style={globalStyles.primaryText}>Transação não encontrada.</Text>
+        <TouchableOpacity style={styles.button} onPress={() => router.back()}>
+          <Text style={styles.buttonText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
@@ -100,6 +147,12 @@ export default function EditTransaction() {
 }
 
 const styles = StyleSheet.create({
+  center: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    padding: 24,
+  },
   content: {
     padding: 20,
     gap: 12,

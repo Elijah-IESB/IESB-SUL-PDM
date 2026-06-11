@@ -14,7 +14,7 @@ export default function CurrencyInput({ form, setForm, valueInputRef }) {
       <Text style={globalStyles.inputLabel}>Valor</Text>
       <TextInput
         ref={valueInputRef}
-        value={form.value.toLocaleString("pt-BR", {
+        value={Number(form.value || 0).toLocaleString("pt-BR", {
           style: "currency",
           currency: "BRL"
         })}

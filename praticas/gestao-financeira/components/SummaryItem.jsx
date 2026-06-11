@@ -9,6 +9,7 @@ import { globalStyles } from "../styles/globalStyles";
  * @returns {JSX.Element}
  */
 export default function SummaryItem({ category, value }) {
+  const numericValue = Number(value);
   const valueStyle = category?.isIncome
     ? globalStyles.positiveText
     : globalStyles.negativeText;
@@ -17,9 +18,11 @@ export default function SummaryItem({ category, value }) {
     <View style={styles.itemContainer}>
       <CategoryItem category={category} />
       <View style={styles.textContainer}>
-        <Text style={globalStyles.primaryText}>{category.displayName}</Text>
+        <Text style={globalStyles.primaryText}>
+          {category?.displayName ?? "Sem categoria"}
+        </Text>
         <Text style={valueStyle}>
-          {value.toLocaleString("pt-BR", {
+          {(Number.isFinite(numericValue) ? numericValue : 0).toLocaleString("pt-BR", {
             style: "currency",
             currency: "BRL",
           })}

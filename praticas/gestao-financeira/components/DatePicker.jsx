@@ -5,6 +5,8 @@ import RNDateTimePicker from "@react-native-community/datetimepicker"
 
 export default function DatePicker({ form, setForm }) {
   const [showPicker, setShowPicker] = useState(false)
+  const date = form.date instanceof Date ? form.date : new Date(form.date)
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date
 
   const handleDateChange = (_, selectDate) => {
     setShowPicker(false)
@@ -19,8 +21,7 @@ export default function DatePicker({ form, setForm }) {
       <Text style={globalStyles.inputLabel}>Data</Text>
       <TouchableOpacity onPress={() => setShowPicker(true)}>
         <TextInput
-          value={form.date.toLocaleDateString("pt-BR")}
-          onChangeText={(text) => setForm({ ...form, date: text })}
+          value={safeDate.toLocaleDateString("pt-BR")}
           style={globalStyles.input}
           editable={false}
         />
@@ -30,7 +31,7 @@ export default function DatePicker({ form, setForm }) {
         <RNDateTimePicker
           mode="date"
           display={Platform.OS === "ios" ? "inline" : "default"}
-          value={form.date}
+          value={safeDate}
           onChange={handleDateChange}
         />
       )}
