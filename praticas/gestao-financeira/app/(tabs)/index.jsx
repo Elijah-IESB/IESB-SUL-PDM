@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { MoneyContext } from "../../contexts/GlobalState";
 import TransactionItem from "../../components/TransactionItem";
@@ -25,7 +26,11 @@ export default function Transactions() {
   const nomeAutenticado = currentUser?.name ?? (userName ? String(userName) : "Usuario");
   const hour = new Date().getHours();
   const greeting =
-    hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+    hour < 12
+      ? { text: "Bom dia", icon: "weather-sunny", color: "#F59E0B" }
+      : hour < 18
+        ? { text: "Boa tarde", icon: "weather-sunset", color: "#F97316" }
+        : { text: "Boa noite", icon: "weather-night", color: "#6366F1" };
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -91,7 +96,16 @@ export default function Transactions() {
   return (
     <View style={globalStyles.screenContainer}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>{greeting}, {nomeAutenticado}!</Text>
+        <View style={styles.welcomeRow}>
+          <MaterialCommunityIcons
+            name={greeting.icon}
+            size={26}
+            color={greeting.color}
+          />
+          <Text style={styles.welcomeText}>
+            {greeting.text}, {nomeAutenticado}!
+          </Text>
+        </View>
       </View>
 
       <View style={styles.filterContainer}>
@@ -199,6 +213,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: colors.primary,
+    flex: 1,
+  },
+  welcomeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   filterContainer: {
     flexDirection: "row",
