@@ -7,16 +7,16 @@ import { colors } from "../../constants/colors";
 import { MoneyContext } from "../../contexts/GlobalState";
 
 export default function TabsLayout() {
-  const { currentUser, logout } = useContext(MoneyContext);
+  const { authReady, currentUser, logout } = useContext(MoneyContext);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    if (!currentUser) {
+    if (authReady && !currentUser) {
       router.replace("/login");
     }
-  }, [currentUser]);
+  }, [authReady, currentUser]);
 
-  if (!currentUser) return null;
+  if (!authReady || !currentUser) return null;
 
   function handleLogout() {
     Alert.alert("Sair", "Deseja voltar para a tela de login?", [
@@ -24,8 +24,8 @@ export default function TabsLayout() {
       {
         text: "Sair",
         style: "destructive",
-        onPress: () => {
-          logout();
+        onPress: async () => {
+          await logout();
           router.replace("/login");
         },
       },

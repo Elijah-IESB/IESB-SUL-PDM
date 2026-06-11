@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -33,12 +33,18 @@ export default function LoginScreen() {
   const [senha, setSenha] = useState("");
   const [mode, setMode] = useState(MODE.LOGIN);
   const [loading, setLoading] = useState(false);
-  const { register, login, requestPasswordReset, resetPassword } =
+  const { authReady, currentUser, register, login, requestPasswordReset, resetPassword } =
     useContext(MoneyContext);
 
   const isCadastro = mode === MODE.REGISTER;
   const isSolicitarToken = mode === MODE.REQUEST_RESET;
   const isConfirmarToken = mode === MODE.CONFIRM_RESET;
+
+  useEffect(() => {
+    if (authReady && currentUser) {
+      router.replace("/(tabs)");
+    }
+  }, [authReady, currentUser]);
 
   async function handleSubmit() {
     if (isCadastro && nome.trim().length < 2) {

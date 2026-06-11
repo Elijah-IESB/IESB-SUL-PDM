@@ -1,10 +1,28 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useContext, useEffect } from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
+import { MoneyContext } from "../contexts/GlobalState";
 
 export default function WelcomeScreen() {
+  const { authReady, currentUser } = useContext(MoneyContext);
+
+  useEffect(() => {
+    if (authReady && currentUser) {
+      router.replace("/(tabs)");
+    }
+  }, [authReady, currentUser]);
+
+  if (!authReady || currentUser) {
+    return (
+      <SafeAreaView style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator color={colors.primary} size="large" />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.hero}>
@@ -49,6 +67,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     padding: 28,
     justifyContent: "space-between",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   hero: {
     alignItems: "center",

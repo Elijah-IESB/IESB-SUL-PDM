@@ -1,14 +1,28 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useEffect, useState } from "react";
 import { api } from "../services/api";
 
 export const MoneyContext = createContext();
+const SESSION_STORAGE_KEY = "@gestao-financeira:user";
 
 export default function GlobalState({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [error, setError] = useState(null);
+
+  const persistUser = useCallback(async (user) => {
+    api.setCurrentUserId(user?.id ?? null);
+    setCurrentUser(user);
+
+    if (user) {
+      await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -30,33 +44,50 @@ export default function GlobalState({ children }) {
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
+    async function restoreSession() {
+      try {
+        const storedUser = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          api.setCurrentUserId(user.id);
+          setCurrentUser(user);
+        }
+      } catch {
+        await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+        api.setCurrentUserId(null);
+      } finally {
+        setAuthReady(true);
+      }
+    }
+
+    restoreSession();
+  }, []);
+
+  useEffect(() => {
+    if (authReady && currentUser) {
       refresh();
     }
-  }, [currentUser, refresh]);
+  }, [authReady, currentUser, refresh]);
 
   const register = useCallback(async (data) => {
     const result = await api.register(data);
-    api.setCurrentUserId(result.user.id);
-    setCurrentUser(result.user);
+    await persistUser(result.user);
     await refresh();
     return result.user;
-  }, [refresh]);
+  }, [persistUser, refresh]);
 
   const login = useCallback(async (data) => {
     const result = await api.login(data);
-    api.setCurrentUserId(result.user.id);
-    setCurrentUser(result.user);
+    await persistUser(result.user);
     await refresh();
     return result.user;
-  }, [refresh]);
+  }, [persistUser, refresh]);
 
-  const logout = useCallback(() => {
-    api.setCurrentUserId(null);
-    setCurrentUser(null);
+  const logout = useCallback(async () => {
+    await persistUser(null);
     setTransactions([]);
     setCategories([]);
-  }, []);
+  }, [persistUser]);
 
   const requestPasswordReset = useCallback(async (data) => {
     return api.requestPasswordReset(data);
@@ -68,17 +99,16 @@ export default function GlobalState({ children }) {
 
   const updateProfile = useCallback(async (data) => {
     const result = await api.updateProfile(currentUser.id, data);
-    setCurrentUser(result.user);
+    await persistUser(result.user);
     return result.user;
-  }, [currentUser]);
+  }, [currentUser, persistUser]);
 
   const deleteAccount = useCallback(async (password) => {
     await api.deleteAccount(currentUser.id, password);
-    api.setCurrentUserId(null);
-    setCurrentUser(null);
+    await persistUser(null);
     setTransactions([]);
     setCategories([]);
-  }, [currentUser]);
+  }, [currentUser, persistUser]);
 
   const addTransaction = useCallback(async (data) => {
     const created = await api.createTransaction(data);
@@ -134,6 +164,7 @@ export default function GlobalState({ children }) {
     <MoneyContext.Provider
       value={{
         currentUser,
+        authReady,
         register,
         login,
         logout,
